@@ -16,7 +16,14 @@
 
 
 import dimod
+import neal
+
 import networkx as nx
+import matplotlib
+matplotlib.use("Agg")  # Use non-GUI backend
+import matplotlib.pyplot as plt
+
+import utilities
 
 
 def build_graph_coloring_bqm(
@@ -65,13 +72,35 @@ def build_graph_coloring_bqm(
     return dimod.BinaryQuadraticModel.from_qubo(q_matrix)
 
 
-def solve_graph_coloring(bqm: dimod.BinaryQuadraticModel):
-    """Solves a BQM that describes graph coloring."""
-    pass
+def solve_graph_coloring(
+        bqm: dimod.BinaryQuadraticModel,
+        num_colors: int,
+        reads: int=50,
+        ) -> list[tuple[int, int]]:
+    """Solves a BQM that describes graph coloring using simulated annealing.
+    
+    Args:
+        bqm: The BQM representing the graph coloring problem.
+        num_colors: The number of available colors.
+        
+    Returns:
+        A list of (node_index, assigned_color) pairs.
+    """
+    sampler = neal.SimulatedAnnealingSampler()
+    samples = sampler.sample(bqm, num_reads=reads)
+    sampleset = samples.aggregate()
+    best_solution = dimod.SampleSet.from_samples(
+        [sampleset.first.sample],
+        vartype='BINARY',
+        energy=[sampleset.first.energy],
+        num_occurrences=[1]
+    )
+
+    return utilities.extract_node_colors(best_solution, num_colors)
 
 
-def visualize_results():
-    """Plots the graph with node colors."""
+def visualize_results(graph: nx.graph, coloring: list[tuple[int, int]]) -> None:
+    """Plots the graph with colored nodes."""
     pass
 
 

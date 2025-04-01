@@ -1,5 +1,6 @@
 import unittest
 import networkx as nx
+
 from graph_coloring import build_graph_coloring_bqm
 
 
@@ -50,7 +51,6 @@ class TestBuildGraphColoringBQM(unittest.TestCase):
         bqm = build_graph_coloring_bqm(G, num_colors)
 
         self.assert_bqm_terms(bqm, expected_linear_terms, expected_quadratic_terms)
-
 
     def test_triangle_graph(self):
         """Test fully connected 3-node graph"""
