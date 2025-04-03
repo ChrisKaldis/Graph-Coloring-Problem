@@ -99,9 +99,40 @@ def solve_graph_coloring(
     return utilities.extract_node_colors(best_solution, num_colors)
 
 
-def visualize_results(graph: nx.graph, coloring: list[tuple[int, int]]) -> None:
-    """Plots the graph with colored nodes."""
-    pass
+def visualize_results(
+        graph: nx.graph,
+        coloring: list[tuple[int, int]],
+        node_size: int=2000,
+        font_size: int=12,
+        edge_color: str="gray",
+        ) -> None:
+    """Saves an image with a graph with colored nodes.
+    
+    Args:
+        graph: Networkx graph.
+        coloring: list of (node_idx, assigned_color) pairs.
+        node_size: size of nodes at plot.
+        font_size: fontsize at plot.
+        edge_color: color of edges at plot.
+    """
+    
+    node_dict = {i: node for i, node in enumerate(graph.nodes)}
+    node_colors = {node_dict[i]: color for i, color in coloring}
+    color_values = [node_colors[node] for node in graph.nodes]
+    
+    plt.figure(figsize=(5, 5))
+    nx.draw(
+        graph,
+        pos=nx.kamada_kawai_layout(graph),
+        with_labels=True,
+        node_color=color_values,
+        cmap=plt.cm.Set1, 
+        node_size=node_size,
+        font_size=font_size,
+        edge_color=edge_color
+    )
+    plt.savefig("graph_plot.png")
+    plt.close()
 
 
 if __name__ == "__main__":
