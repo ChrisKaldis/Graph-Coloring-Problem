@@ -15,15 +15,17 @@
 # limitations under the License.
 
 
+import utilities
+
 import dimod
 import neal
 
 import networkx as nx
-import matplotlib
-matplotlib.use("Agg")  # Use non-GUI backend
-import matplotlib.pyplot as plt
+import argparse
 
-import utilities
+import matplotlib
+matplotlib.use("agg") # Use non-GUI backend
+import matplotlib.pyplot as plt
 
 
 def build_graph_coloring_bqm(
@@ -45,7 +47,7 @@ def build_graph_coloring_bqm(
         b_coefficient: Penalty weight for adjacency constraint.
 
     Returns:
-        dimod.BinaryQuadraticModel representing the graph coloting problem.
+        dimod.BinaryQuadraticModel representing the graph coloring problem.
     """
     q_matrix = dict()
     nodes = list(graph.nodes())
@@ -75,23 +77,24 @@ def build_graph_coloring_bqm(
 def solve_graph_coloring(
         bqm: dimod.BinaryQuadraticModel,
         num_colors: int,
-        reads: int=50,
+        num_reads: int,
         ) -> list[tuple[int, int]]:
     """Solves a BQM that describes graph coloring using simulated annealing.
     
     Args:
         bqm: The BQM representing the graph coloring problem.
         num_colors: The number of available colors.
+        num_reads: Number of times simulated annealing is executed. 
         
     Returns:
         A list of (node_index, assigned_color) pairs.
     """
     sampler = neal.SimulatedAnnealingSampler()
-    samples = sampler.sample(bqm, num_reads=reads)
+    samples = sampler.sample(bqm, num_reads=num_reads)
     sampleset = samples.aggregate()
     best_solution = dimod.SampleSet.from_samples(
         [sampleset.first.sample],
-        vartype='BINARY',
+        vartype="BINARY",
         energy=[sampleset.first.energy],
         num_occurrences=[1]
     )
@@ -102,7 +105,7 @@ def solve_graph_coloring(
 def visualize_results(
         graph: nx.graph,
         coloring: list[tuple[int, int]],
-        node_size: int=2000,
+        node_size: int=1000,
         font_size: int=12,
         edge_color: str="gray",
         ) -> None:
@@ -115,18 +118,17 @@ def visualize_results(
         font_size: fontsize at plot.
         edge_color: color of edges at plot.
     """
-    
     node_dict = {i: node for i, node in enumerate(graph.nodes)}
     node_colors = {node_dict[i]: color for i, color in coloring}
     color_values = [node_colors[node] for node in graph.nodes]
-    
+
     plt.figure(figsize=(5, 5))
     nx.draw(
         graph,
         pos=nx.kamada_kawai_layout(graph),
         with_labels=True,
         node_color=color_values,
-        cmap=plt.cm.Set1, 
+        cmap=plt.cm.Set1,
         node_size=node_size,
         font_size=font_size,
         edge_color=edge_color
@@ -135,5 +137,53 @@ def visualize_results(
     plt.close()
 
 
+def parse_arguments() -> argparse.Namespace:
+    """Parses command line arguments for the graph coloring problem. 
+    
+    Returns:
+        An argument parser Namespace."""
+    parser = argparse.ArgumentParser(
+        description="Arguments for building Graph Coloring Problem"
+    )
+    parser.add_argument(
+        "--nodes",
+        "-n",
+        type=int,
+        default=10,
+        help="Number of nodes graph has."
+    )
+    parser.add_argument(
+        "--edges",
+        "-e",
+        type=int,
+        default=25,
+        help="Number of edges graph has."
+    )
+    parser.add_argument(
+        "--colors",
+        "-c",
+        type=int,
+        default=4,
+        help="Number of available colors."
+    )
+    parser.add_argument(
+        "--reads",
+        "-r",
+        type=int,
+        default=50,
+        help="Number of reads, each run of simulated annealing is one read."
+    )
+
+    return parser.parse_args()
+
+
+def main():
+    args = parse_arguments()
+    graph = nx.random_graphs.gnm_random_graph(n=args.nodes, m=args.edges)
+    graph_coloring_bqm = build_graph_coloring_bqm(graph, args.colors)
+    coloring = solve_graph_coloring(graph_coloring_bqm, args.colors, args.reads)
+    visualize_results(graph, coloring)
+
+
 if __name__ == "__main__":
-    pass
+    main()
